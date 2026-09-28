@@ -1,59 +1,85 @@
-import { useState } from 'react'
-import Sidebar from '../organisms/Sidebar.jsx'
-import Navbar from '../organisms/Navbar.jsx'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import * as api from '../../api'
+import AppLayout from '../templates/AppLayout.jsx'
+import StatusMessage from '../molecules/StatusMessage.jsx'
+import Button from '../atoms/Button.jsx'
 import ItemForm from '../organisms/ItemForm.jsx'
+import { ResourceNotFound } from './NotFoundPage.jsx'
+import { useResource } from '../../hooks/useResource.js'
 
-const EXISTING_ITEM = {
-  name: 'MCHOSE Ace 68',
-  image: '',
-  value: '4500',
-  currency: 'PHP',
-  purchasePrice: '4000',
-  acquiredDate: '2026-09-01',
-  acquiredFrom: 'Local Store',
-  condition: 'Like New',
-  notes: 'One of my favorite Hall Effect keyboards.',
-  isFavorite: true,
-}
+// /items/:id/edit loads item :id from the API and fills the shared ItemForm
+// with ITS values. The form is only rendered after the item has loaded, so it
+// can never show another item's data (or an empty form) first.
 
 export default function EditItemPage() {
-  const [item, setItem] = useState(EXISTING_ITEM)
+  const { id } = useParams()
+  return <EditItem key={id} id={id} />
+}
 
-  function handleSubmit(event) {
-    event.preventDefault()
+function EditItem({ id }) {
+  const navigate = useNavigate()
+  const item = useResource(() => api.getItem(id), [id])
 
-    console.log('Updated item:', item)
+  if (item.loading) {
+    return (
+      <AppLayout>
+        <StatusMessage variant="loading" title="Loading item…" />
+      </AppLayout>
+    )
   }
 
-  function handleCancel() {
-    setItem(EXISTING_ITEM)
+  if (item.error) {
+    return (
+      <AppLayout>
+        {api.isNotFound(item.error) ? (
+          <ResourceNotFound
+            title="Item not found"
+            message="This item does not exist, so it cannot be edited."
+            backTo="/collections"
+            backLabel="Back to Collections"
+          />
+        ) : (
+          <StatusMessage
+            variant="error"
+            title="Could not load this item"
+            action={<Button onClick={item.reload}>Try again</Button>}
+          >
+            {item.error.message}
+          </StatusMessage>
+        )}
+      </AppLayout>
+    )
+  }
+
+  const data = item.data
+  const itemPath = `/items/${data.id}`
+
+  async function handleSubmit(payload) {
+    const saved = await api.updateItem(data.id, payload)
+    navigate(itemPath, { replace: true, state: { notice: `Saved changes to "${saved.name}".` } })
   }
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppLayout>
+      <Link to={itemPath} className="back-link">
+        <span aria-hidden="true">←</span> Back to {data.name}
+      </Link>
 
-      <div className="main-area">
-        <Navbar />
+      <header className="page-header">
+        <div>
+          <h1>Edit Item</h1>
+          <p className="muted">
+            Editing <strong>{data.name}</strong> in {data.collectionName}.
+          </p>
+        </div>
+      </header>
 
-        <main className="page-content">
-          <header className="page-header">
-            <div>
-              <p>← Back to Item</p>
-              <h2>Edit Item</h2>
-              <p>Update the information for this item.</p>
-            </div>
-          </header>
-
-          <ItemForm
-            item={item}
-            setItem={setItem}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            submitLabel="Update Item"
-          />
-        </main>
-      </div>
-    </div>
+      <ItemForm
+        initialValues={data}
+        onSubmit={handleSubmit}
+        onCancel={() => navigate(itemPath)}
+        submitLabel="Update Item"
+      />
+    </AppLayout>
   )
 }

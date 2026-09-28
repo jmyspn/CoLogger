@@ -1,29 +1,31 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../auth/AuthContext.jsx'
+
+// Main navigation. NavLink marks the current section with aria-current="page"
+// (and the .active class for styling). On screens narrower than 768px the CSS
+// turns this vertical sidebar into a compact bar across the top of the page.
 
 export default function Sidebar() {
+  const { logout } = useAuth()
   const navigate = useNavigate()
 
-  function handleLogout() {
-    localStorage.removeItem('cologgerDemoSession')
-    navigate('/login')
+  async function handleLogout() {
+    await logout()
+    navigate('/login', { replace: true })
   }
 
   return (
     <aside className="sidebar">
-      <div>
-        <h2 className="sidebar-title">CoLogger</h2>
+      <Link to="/dashboard" className="sidebar-brand">
+        CoLogger
+      </Link>
 
-        <nav className="sidebar-nav">
-          <a href="/dashboard">Dashboard</a>
-          <a href="/collections">Collections</a>
-        </nav>
-      </div>
+      <nav className="sidebar-nav" aria-label="Main">
+        <NavLink to="/dashboard">Dashboard</NavLink>
+        <NavLink to="/collections">Collections</NavLink>
+      </nav>
 
-      <button
-        type="button"
-        className="logout-button"
-        onClick={handleLogout}
-      >
+      <button type="button" className="logout-button" onClick={handleLogout}>
         Logout
       </button>
     </aside>

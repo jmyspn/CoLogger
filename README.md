@@ -1,200 +1,321 @@
 # CoLogger
 
-CoLogger is a React web application for collectors and hobbyists who want to organize and track their personal collections. Users will be able to create collections and keep information about individual items such as condition, estimated value, purchase price, acquisition date, notes, and favorite status.
+CoLogger (Collection Logger) is a full-stack web application for collectors who want to organize and track personal collections — mechanical keyboards, sneakers, trading cards, watches, games, figures and anything else. Each collection holds items with a name, image, estimated value, currency, purchase price, acquired date, where it was acquired, condition, notes and a favorite flag.
 
-> Week 1 status: The current build is a frontend demo. The React pages and routes are in place, but the Express API and PostgreSQL database are not yet connected to the CoLogger interface.
+**Stack:** React 18 + Vite + React Router (client) · Express 4 (API) · PostgreSQL (database) · bcrypt-hashed passwords with server-side sessions.
+
+> **Deployment status:** the client deploys to GitHub Pages through `.github/workflows/deploy-pages.yml`. The API and database are not deployed yet. Until they are, the Pages build runs in **demo mode** (see [Demo mode](#demo-mode)). Add the live links here once they exist.
+
+## Contents
+
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Setup from a fresh clone](#setup-from-a-fresh-clone)
+- [Environment variables](#environment-variables)
+- [Database setup](#database-setup)
+- [How to run](#how-to-run)
+- [Features and usage](#features-and-usage)
+- [How the data flows](#how-the-data-flows)
+- [Project structure](#project-structure)
+- [Screenshots](#screenshots)
+- [Known issues and next steps](#known-issues-and-next-steps)
+- [AI usage](#ai-usage)
 
 ## Overview
 
-The goal of CoLogger is to provide a simple digital place for users to keep track of collections such as mechanical keyboards, sneakers, trading cards, figures, games, watches, and other collectibles.
+- Register and log in; every collection and item belongs to the logged-in user.
+- Create, search, rename and delete collections.
+- Add, view, edit, favorite and delete items inside a collection, including an image.
+- The dashboard shows totals (collections, items, favorites) and recent items, all counted live from the database.
+- Works on desktop and phones (tested at 375, 390 and 412 px wide).
 
-The current Week 1 version focuses on the React frontend, reusable components, routing, and a temporary demo authentication flow.
+## Requirements
 
-## Setup and Installation
-
-### Requirements
-
-Install the following first:
-
-- Node.js
-- npm
+- **Node.js 20.6 or newer** (the server uses `node --env-file`)
+- **npm** (comes with Node)
+- **PostgreSQL 14 or newer**, running locally or hosted (e.g. Neon)
 - Git
 
-### Clone the repository
+## Setup from a fresh clone
 
 ```bash
 git clone https://github.com/jmyspn/CoLogger.git
 cd CoLogger
 ```
 
-### Install the client dependencies
+### 1. Server
+
+```bash
+cd server
+npm install
+cp .env.example .env        # then edit .env (see below)
+npm run db:reset            # creates the tables and loads the sample data
+npm run dev                 # API on http://localhost:3000
+```
+
+Check it is working: open <http://localhost:3000/readyz>. It should show `{"ok":true,"db":"up"}`.
+
+### 2. Client (in a second terminal)
 
 ```bash
 cd client
 npm install
+cp .env.example .env        # the defaults point at http://localhost:3000
+npm run dev                 # app on http://localhost:5173
 ```
 
-The current Week 1 frontend demo does not require PostgreSQL to run.
+Open <http://localhost:5173>. Log in with the sample account below, or register a new one.
 
-No real credentials should be added to the repository.
+| Sample account | |
+| --- | --- |
+| Email | `demo@cologger.test` |
+| Password | `cologger-demo` |
 
-## How to Run
+This account is created by `npm run db:seed`, and its password is published on purpose so a grader can log in. It is not a real credential.
 
-From the `client` folder:
+On Windows PowerShell, use `copy .env.example .env` instead of `cp`.
 
-```bash
-npm run dev
+## Environment variables
+
+`.env` files are git-ignored. Only the `.env.example` files are committed, and they contain placeholders only.
+
+### `server/.env`
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `postgresql://postgres:YOUR_PASSWORD@localhost:5432/cologger` | PostgreSQL connection string. Hosted databases usually need `?sslmode=require`. |
+| `CORS_ORIGINS` | `http://localhost:5173` | Browser origins allowed to call the API, comma-separated, with no trailing slash. |
+| `NODE_ENV` | `development` | Set to `production` on a host. |
+| `PORT` | *(do not set)* | The host provides it. It defaults to 3000 locally. |
+
+### `client/.env`
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| `VITE_USE_MOCK_API` | `false` | `false` means use the real API. Anything else, including unset, means demo mode. |
+| `VITE_API_BASE_URL` | `http://localhost:3000` | Where the API lives, with no trailing slash. |
+
+`VITE_` values are compiled into the public JavaScript. Never put secrets in them.
+
+## Database setup
+
+1. Create an empty database called `cologger`, for example with `createdb cologger` or `CREATE DATABASE cologger;` in psql/pgAdmin.
+2. Put its connection string in `server/.env` as `DATABASE_URL`.
+3. From `server/`, run:
+
+   | Command | What it does |
+   | --- | --- |
+   | `npm run db:schema` | Runs `db/schema.sql`. Creates the tables and is safe to run twice. |
+   | `npm run db:seed` | Runs `db/seed.js`. **Empties every table**, creates the demo user (password hashed with bcrypt), then loads `db/seed.sql`. |
+   | `npm run db:reset` | Runs both of the above. |
+   | `npm test` | Runs API integration tests against the database. They use throwaway accounts and delete them afterwards. |
+
+   Never run `db:seed` against a database whose data you want to keep.
+
+### Schema
+
+```
+users ──< sessions
+users ──< collections ──< items
 ```
 
-Vite will display a local address, usually:
+| Table | Key columns |
+| --- | --- |
+| `users` | `id`, `name`, `email` (unique, case-insensitive), `password_hash` |
+| `sessions` | `user_id`, `token_hash` (SHA-256 of the login token), `expires_at` |
+| `collections` | `id`, `user_id`, `name` (unique per user, case-insensitive), `description` |
+| `items` | `id`, `collection_id`, `name`, `image`, `estimated_value`, `currency`, `purchase_price`, `acquired_date`, `acquired_from`, `condition`, `notes`, `is_favorite` |
 
-```text
-http://localhost:5173
+Foreign keys use `ON DELETE CASCADE`: deleting a collection deletes its items. Item counts and dashboard totals are not stored anywhere; they are counted with SQL on every request, so they can't drift out of date.
+
+## How to run
+
+| Task | Where | Command |
+| --- | --- | --- |
+| API with auto-restart | `server/` | `npm run dev` |
+| API, production style | `server/` | `npm start` |
+| API tests | `server/` | `npm test` |
+| Client dev server | `client/` | `npm run dev` |
+| Client production build | `client/` | `npm run build` (output in `client/dist`) |
+
+### Demo mode
+
+If the client is built without `VITE_USE_MOCK_API=false`, it uses `client/src/api/mockApi.js` instead of the API. This is the template's "simulated backend": everything is stored in that browser's `localStorage`, and a yellow **Demo mode** notice is shown on every page. Sample data is written only the first time, when that storage is empty. Demo mode exists so the GitHub Pages link works before the API is deployed. It is not the real application, and the two are never used at the same time.
+
+## Features and usage
+
+| Screen | Route | What you can do |
+| --- | --- | --- |
+| Login | `/login` | Log in. After logging in you return to the page you originally asked for. |
+| Register | `/register` | Create an account. You are logged in straight away. |
+| Dashboard | `/dashboard` | Live totals, the 6 most recent items, a search across collection and item names, and "+ New Collection". |
+| Collections | `/collections` | Search your collections and create a new one (dialog). Each card shows its computed item count. |
+| Collection Details | `/collections/:id` | Only that collection's items. Search within it, rename or delete the collection, add an item, favorite items. |
+| Add Item | `/collections/:id/items/new` | Shared `ItemForm`. The item is saved into the collection named in the URL. |
+| Item Details | `/items/:id` | All fields, favorite toggle, Edit, Delete, and "Back to *its* collection". |
+| Edit Item | `/items/:id/edit` | The same `ItemForm`, filled with that item's saved values. |
+
+Every app route requires a login. If you're not logged in you are sent to `/login`. An id that does not exist shows **Collection not found** or **Item not found**. It never falls back to other data. Unknown URLs show **Page not found**.
+
+**Validation.** It happens both in the browser (instant messages next to each field) and in the API (so a bypassed browser can't store bad data):
+- Collection and item names are required.
+- Money values must be numbers, 0 or more, with at most 2 decimals.
+- Dates must be real dates and not in the future.
+- Currency and condition must come from their lists.
+- Lengths are limited.
+- Duplicate collection names and duplicate emails are rejected.
+
+**Authentication.**
+- Passwords are hashed with bcrypt on the server and are never stored or logged in plain text, and never stored in the browser.
+- Logging in creates a random session token. The database keeps only its SHA-256 hash, and it expires after 30 days.
+- The browser keeps the token in `localStorage` and sends it as `Authorization: Bearer …`.
+- Logout deletes the session on the server.
+- Every query checks ownership (`c.user_id = $1`), so one user can never read or change another's collections or items. They get a 404.
+- Login and register are rate limited (20 attempts per 15 minutes per IP), and `helmet` sets security headers.
+- Trade-off: a token in `localStorage` could be read by injected script if the site ever had an XSS bug. An httpOnly cookie avoids that but breaks when the client (github.io) and API (another domain) are on different sites. This was a deliberate choice for this deployment.
+
+**Images.**
+- When you pick a photo, the browser resizes it to at most 800 px and converts it to a JPEG *data URL*, typically 50–200 KB.
+- The API stores that text in the `items.image` column. Images are saved in PostgreSQL alongside the item, so they survive refreshes and redeploys, and deleting the item deletes its image.
+- Accepted formats are JPEG, PNG, WebP and GIF. GIFs become a still JPEG.
+- In demo mode the image is stored in the browser's `localStorage`, which holds only a few MB.
+
+**Accessibility.**
+- Semantic landmarks, and a skip link.
+- Labelled form fields, with errors announced through `aria-describedby`.
+- Real links and buttons, with no clickable `div`s.
+- A visible focus ring on everything.
+- Heart buttons use `aria-pressed` and name their item.
+- The dialog traps focus and closes with Escape.
+- Images have alt text.
+- Colours meet WCAG AA contrast.
+
+## How the data flows
+
+There is one source of truth, the API and its database. There is one path to it:
+
+```
+page component ──▶ client/src/api/index.js ──▶ httpApi.js ──▶ Express route ──▶ repos/*.js ──▶ PostgreSQL
+                                          └──▶ mockApi.js (demo-mode builds only)
 ```
 
-Opening the root address redirects to:
+- Pages keep no data of their own. `/items/4` calls `getItem(4)` and shows exactly what comes back. Each detail page is keyed by the URL id, so it can never show a previous item.
+- The only global state is "who is logged in" (`client/src/auth/AuthContext.jsx`).
+- A new item's collection comes from the URL (`POST /api/collections/:id/items`), never from the form.
 
-```text
-/login
-```
+### API endpoints
 
-## Features and Usage
+All endpoints except register and login require `Authorization: Bearer <token>`.
 
-### Current Week 1 Features
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/register` | Create an account. Returns `{ user, token }`. |
+| POST | `/api/auth/login` | Log in. Returns `{ user, token }`. |
+| POST | `/api/auth/logout` | End this session. |
+| GET | `/api/auth/me` | Return the logged-in user. |
+| GET / POST | `/api/collections` | List / create collections. |
+| GET / PUT / DELETE | `/api/collections/:id` | Read / rename / delete a collection (the delete includes its items). |
+| GET / POST | `/api/collections/:id/items` | List / add the items in one collection. |
+| GET | `/api/items?search=text` | Search item names. |
+| GET / PUT / DELETE | `/api/items/:id` | Read / update / delete an item. |
+| PATCH | `/api/items/:id/favorite` | Set `{ isFavorite }`. |
+| GET | `/api/dashboard` | Totals and recent items. |
+| GET | `/healthz`, `/readyz` | Check the process is alive / the database is reachable. |
 
-The current frontend includes the following planned screens:
-
-- Login
-- Register
-- Dashboard
-- Collections
-- Collection Details
-- Add Item
-- Item Details
-- Edit Item
-
-### Demo Authentication
-
-Authentication is currently a temporary frontend demo using browser `localStorage`.
-
-Current flow:
-
-1. Open `/register`.
-2. Enter a name, email, and password.
-3. Registration stores the demo user's name and email locally.
-4. The user is returned to `/login`.
-5. Login checks the registered demo email.
-6. A temporary demo session is created.
-7. The user is sent to `/dashboard`.
-8. Logout removes the demo session and returns to `/login`.
-
-This is not the final authentication system. It will later be replaced with server and database authentication.
-
-### Collections and Items
-
-The Dashboard, Collections, Collection Details, and Item Details pages currently use sample data.
-
-The Add Item and Edit Item pages use a shared `ItemForm` component.
-
-Form data can currently be entered, but it is not yet saved to a database.
-
-## Project Structure
+## Project structure
 
 ```text
 CoLogger/
-├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── atoms/
-│   │   │   ├── molecules/
-│   │   │   ├── organisms/
-│   │   │   └── pages/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   └── package.json
-│
-├── server/
-├── docs/
-├── screenshots/
+├── client/                         React + Vite
+│   ├── .env.example
+│   └── src/
+│       ├── api/                    the ONLY data access layer
+│       │   ├── index.js            picks httpApi or mockApi at build time
+│       │   ├── httpApi.js          calls the Express API
+│       │   ├── mockApi.js          demo mode (browser storage)
+│       │   ├── seedData.js         demo-mode sample data
+│       │   ├── tokenStore.js       where the login token is kept
+│       │   └── errors.js           ApiError
+│       ├── auth/                   AuthContext, route guards
+│       ├── hooks/                  useResource, useFavoriteToggle, useFlashNotice, useDebouncedValue
+│       ├── lib/                    validation, formatting, image resizing
+│       ├── components/
+│       │   ├── atoms/              Button, Input, FavoriteButton
+│       │   ├── molecules/          SearchBar, FormField, CollectionCard, ItemCard, ImageUploader, StatusMessage
+│       │   ├── organisms/          Navbar, Sidebar, ItemForm, CollectionForm, CollectionGrid, ItemGrid
+│       │   ├── templates/          AppLayout (sidebar + navbar + main)
+│       │   ├── pages/              the 8 screens + NotFoundPage
+│       │   └── DemoNotice.jsx
+│       ├── App.jsx                 routes
+│       └── styles.css              design system + responsive rules
+├── server/                         Express + PostgreSQL
+│   ├── .env.example
+│   ├── server.js                   starts the app
+│   ├── app.js                      middleware + route mounting
+│   ├── routes/                     auth, collections, items, dashboard
+│   ├── repos/                      parameterised SQL (users, sessions, collections, items)
+│   ├── middleware/auth.js          Bearer-token check
+│   ├── validation.js               server-side validation
+│   ├── db/                         pool, schema.sql, seed.sql, seed.js, run.js
+│   └── test/api.test.js            integration tests (node:test)
+├── docs/                           planning documents and screenshots
+├── compose.yml                     optional self-hosting with Docker
 ├── AI-USAGE.md
 ├── REPORT.md
-├── README.md
-└── START-HERE.md
+└── README.md
 ```
 
-## Component Organization
+### Design system
 
-### Atoms
+Defined as CSS custom properties at the top of `client/src/styles.css`:
 
-- Button
-- Input
-- FavoriteButton
-
-### Molecules
-
-- SearchBar
-- FormField
-- CollectionCard
-- ItemCard
-- ImageUploader
-
-### Organisms
-
-- Navbar
-- Sidebar
-- ItemForm
-- CollectionGrid
-- ItemGrid
-
-### Pages
-
-- LoginPage
-- RegisterPage
-- DashboardPage
-- CollectionsPage
-- CollectionDetailsPage
-- AddItemPage
-- ItemDetailsPage
-- EditItemPage
+- **Colours:** primary `#1D4ED8`, accent `#0F766E` (favorites, collection labels), background `#F8FAFC`, surface `#FFFFFF`, text `#111827`.
+- **Type:** Arial, Helvetica, sans-serif. Headings 28 px bold, body 16 px, small 14 px.
+- **Spacing:** 8 px base (8 / 16 / 24 / 32), with 24 px screen-edge padding.
+- **Mobile (below 768 px):**
+  - the sidebar becomes a top bar
+  - every grid, form row and the item details page stack to one column
+  - the item image moves above the details
+  - cards become compact rows
+  - form buttons go full width
 
 ## Screenshots
 
-> Current status: The frontend is still a Week 1 work in progress. The main screens, routes, and reusable components are in place, but the final styling, responsive behavior, navigation actions, and backend/database integration are not yet complete.
+| Login | Dashboard |
+| --- | --- |
+| ![Login](./docs/screenshots/login.png) | ![Dashboard](./docs/screenshots/dashboard.png) |
 
-### Login
+| Collections | Collection details |
+| --- | --- |
+| ![Collections](./docs/screenshots/collections.png) | ![Collection details](./docs/screenshots/collection-details.png) |
 
-![Login screen](./docs/screenshots/login.png)
+| Add item | Item details |
+| --- | --- |
+| ![Add item](./docs/screenshots/add-item.png) | ![Item details](./docs/screenshots/item-details.png) |
 
-### Dashboard
+| Edit item | Register |
+| --- | --- |
+| ![Edit item](./docs/screenshots/edit-item.png) | ![Register](./docs/screenshots/register.png) |
 
-![Dashboard screen](./docs/screenshots/dashboard.png)
+Mobile (375 px):
 
-### Collections
+| Dashboard | Item details | Edit item |
+| --- | --- | --- |
+| ![Mobile dashboard](./docs/screenshots/mobile-dashboard.png) | ![Mobile item details](./docs/screenshots/mobile-item-details.png) | ![Mobile edit item](./docs/screenshots/mobile-edit-item.png) |
 
-![Collections screen](./docs/screenshots/collections.png)
+## Known issues and next steps
 
-## Known Issues and Next Steps
+- **Not deployed yet.** The API and database still need a host (for example Render + Neon). After that:
+  - set `CORS_ORIGINS` on the API to the Pages origin
+  - set the repository variables `VITE_USE_MOCK_API=false` and `VITE_API_BASE_URL`
+  - rebuild the client
+- **Images in the database.** This is simple and survives redeploys on free hosts, but list responses include each item's image. It is fine for personal collections of dozens of items. Object storage (S3, Cloudinary) would be the next step for thousands.
+- **Demo mode storage** is limited to a few MB per browser, so only a handful of images fit.
+- **No password reset or email verification.**
+- **No pagination.** Collections and items load in full.
+- **Values are per item currency.** There is no currency conversion, so the dashboard shows counts rather than a total value.
+- **Items cannot be moved** between collections. The workaround is to delete and re-add.
 
-The project is still in development.
+## AI usage
 
-Current known limitations:
-
-- Authentication is only a `localStorage` demo.
-- The Express server is not yet connected to the CoLogger frontend.
-- PostgreSQL is not yet connected to the CoLogger data.
-- Collection and item data is currently sample data.
-- Add Item and Edit Item do not persist changes.
-- Some buttons and navigation actions are still placeholders.
-- Route protection still needs to be added.
-- The final CoLogger styling and responsive design still need to be applied.
-- Image upload is not yet connected to permanent storage.
-
-Next steps are to finish the frontend navigation and styling, connect the Express API and PostgreSQL database, and replace the demo data with persistent data.
-
-## AI Usage
-
-AI tools were used during development for guidance, code assistance, debugging, and documentation support.
-
-A detailed record is kept in:
-
-[AI-USAGE.md](./AI-USAGE.md)
+AI tools were used during development. What was generated, what was reviewed and what was changed is recorded in [AI-USAGE.md](./AI-USAGE.md).

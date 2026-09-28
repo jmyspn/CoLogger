@@ -1,20 +1,13 @@
 import CollectionCard from '../molecules/CollectionCard.jsx'
 
-export default function CollectionGrid({
-  collections,
-  onOpenCollection,
-}) {
+export default function CollectionGrid({ collections, label = 'Collections' }) {
   return (
-    <div className="collection-grid">
+    <ul className="collection-grid card-list" aria-label={label}>
       {collections.map((collection) => (
-        <CollectionCard
-          key={collection.id}
-          title={collection.name}
-          itemCount={collection.itemCount}
-          image={collection.image}
-          onClick={() => onOpenCollection(collection.id)}
-        />
+        <li key={collection.id}>
+          <CollectionCard collection={collection} />
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

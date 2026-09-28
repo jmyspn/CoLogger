@@ -1,68 +1,70 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Input from '../atoms/Input.jsx'
 import Button from '../atoms/Button.jsx'
+import StatusMessage from '../molecules/StatusMessage.jsx'
+import DemoNotice from '../DemoNotice.jsx'
+import { useAuth } from '../../auth/AuthContext.jsx'
+import { hasErrors, validateLogin } from '../../lib/validation.js'
 
 export default function LoginPage() {
+  const { login, sessionExpired } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-  })
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
-  const [error, setError] = useState('')
+  // Where to go after logging in: the protected page that sent us here, or the dashboard.
+  const destination = location.state?.from?.pathname || '/dashboard'
 
-  function handleSubmit(event) {
+  function update(field) {
+    return (event) => setForm((current) => ({ ...current, [field]: event.target.value }))
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault()
-    setError('')
+    setFormError('')
+    const found = validateLogin(form)
+    setErrors(found)
+    if (hasErrors(found)) return
 
-    const savedUser = localStorage.getItem('cologgerDemoUser')
-
-    if (!savedUser) {
-      setError('No demo account found. Please register first.')
-      return
+    setSubmitting(true)
+    try {
+      await login({ email: form.email.trim(), password: form.password })
+      navigate(destination, { replace: true })
+    } catch (error) {
+      setErrors(error.fields || {})
+      setFormError(error.message)
+      setSubmitting(false)
     }
-
-    const demoUser = JSON.parse(savedUser)
-
-    if (form.email.trim().toLowerCase() !== demoUser.email) {
-      setError('Email does not match the registered demo account.')
-      return
-    }
-
-    localStorage.setItem(
-      'cologgerDemoSession',
-      JSON.stringify({
-        name: demoUser.name,
-        email: demoUser.email,
-      })
-    )
-
-    navigate('/dashboard')
   }
 
   return (
     <main className="auth-page">
-      <section className="auth-card">
-        <h1>CoLogger</h1>
-        <p>Login to your demo account.</p>
+      <section className="auth-card" aria-labelledby="login-title">
+        <p className="auth-brand">CoLogger</p>
+        <h1 id="login-title">Log in</h1>
+        <p className="muted">Organize and track your personal collections.</p>
 
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
+        <DemoNotice />
+
+        {sessionExpired && !formError && (
+          <StatusMessage variant="notice">Your session ended. Please log in again.</StatusMessage>
         )}
+        {formError && <StatusMessage variant="error">{formError}</StatusMessage>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <Input
             id="login-email"
             label="Email"
             type="email"
+            autoComplete="email"
             value={form.email}
-            onChange={(event) =>
-              setForm({ ...form, email: event.target.value })
-            }
+            onChange={update('email')}
+            error={errors.email}
             required
           />
 
@@ -70,21 +72,24 @@ export default function LoginPage() {
             id="login-password"
             label="Password"
             type="password"
+            autoComplete="current-password"
             value={form.password}
-            onChange={(event) =>
-              setForm({ ...form, password: event.target.value })
-            }
+            onChange={update('password')}
+            error={errors.password}
             required
           />
 
-          <Button type="submit">
-            Login
+          <Button type="submit" className="button-block" disabled={submitting}>
+            {submitting ? 'Logging in…' : 'Login'}
           </Button>
         </form>
 
-        <p>
-          Don&apos;t have an account?{' '}
-          <a href="/register">Register</a>
+        <p className="auth-switch">
+          Don&apos;t have an account? <Link to="/register">Register</Link>
+        </p>
+
+        <p className="field-hint demo-credentials">
+          Sample data account: <strong>demo@cologger.test</strong> / <strong>cologger-demo</strong>
         </p>
       </section>
     </main>

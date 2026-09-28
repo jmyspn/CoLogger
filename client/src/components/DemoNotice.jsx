@@ -1,23 +1,18 @@
 import { USING_MOCK_API } from '../api'
 
-// Shown only while the simulated backend is switched on. It disappears by
-// itself the moment you set VITE_USE_MOCK_API=false, because it reads the same
-// variable the API layer does.
-//
-// Leave this in. A deployment that quietly pretends to have a server is the
-// difference between a deliberate staging site and a submission hoping nobody
-// checks.
+// Shown only in demo mode (VITE_USE_MOCK_API not set to "false"). It reads the
+// same flag as the API layer, so it disappears by itself in a real-API build.
+// A deployment that quietly pretends to have a server should say so.
+
 export default function DemoNotice() {
   if (!USING_MOCK_API) return null
 
   return (
-    <div className="demo-notice" role="status">
-      <strong>Demo mode.</strong> This deployment exists to show the interface.
-      It runs on a <strong>simulated backend</strong>: everything you add is
-      stored in your own browser, is shared with nobody, and disappears when you
-      clear your browsing data. There is no server and no database behind this
-      page. The full version runs against an Express API and a PostgreSQL
-      database, deployed separately. See the README.
+    <div className="demo-notice" role="note">
+      <strong>Demo mode.</strong> This copy of CoLogger runs on a simulated backend:
+      your account, collections, items and images are stored only in this browser and
+      disappear if you clear its site data. The full version uses the Express API and
+      PostgreSQL database described in the README.
     </div>
   )
 }

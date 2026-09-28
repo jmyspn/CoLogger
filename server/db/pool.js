@@ -1,5 +1,11 @@
 import pg from 'pg'
 
+// PostgreSQL DATE columns (type OID 1082) hold a calendar day with no time or
+// time zone. node-postgres turns them into a JavaScript Date at local midnight
+// by default, which shifts the day for anyone whose server runs in another time
+// zone. Keep them as the plain 'YYYY-MM-DD' string the database returned.
+pg.types.setTypeParser(1082, (value) => value)
+
 // Fail at boot with one clear line, rather than with a mystery 500 an hour
 // later. The commonest deployment mistake is setting a variable in .env on your
 // laptop and never setting it in the host's dashboard.

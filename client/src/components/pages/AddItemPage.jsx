@@ -1,59 +1,83 @@
-import { useState } from 'react'
-import Sidebar from '../organisms/Sidebar.jsx'
-import Navbar from '../organisms/Navbar.jsx'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import * as api from '../../api'
+import AppLayout from '../templates/AppLayout.jsx'
+import StatusMessage from '../molecules/StatusMessage.jsx'
+import Button from '../atoms/Button.jsx'
 import ItemForm from '../organisms/ItemForm.jsx'
+import { ResourceNotFound } from './NotFoundPage.jsx'
+import { useResource } from '../../hooks/useResource.js'
 
-const EMPTY_ITEM = {
-  name: '',
-  image: '',
-  value: '',
-  currency: 'PHP',
-  purchasePrice: '',
-  acquiredDate: '',
-  acquiredFrom: '',
-  condition: '',
-  notes: '',
-  isFavorite: false,
-}
+// /collections/:id/items/new
+//
+// The collection comes from the URL. The page loads it first (to show its name
+// and to refuse a collection id that does not exist), then saves the new item
+// with POST /api/collections/:id/items, so the item can only ever be created
+// inside the collection named in the URL.
 
 export default function AddItemPage() {
-  const [item, setItem] = useState(EMPTY_ITEM)
+  const { id } = useParams()
+  return <AddItem key={id} collectionId={id} />
+}
 
-  function handleSubmit(event) {
-    event.preventDefault()
+function AddItem({ collectionId }) {
+  const navigate = useNavigate()
+  const collection = useResource(() => api.getCollection(collectionId), [collectionId])
 
-    console.log('New item:', item)
+  if (collection.loading) {
+    return (
+      <AppLayout>
+        <StatusMessage variant="loading" title="Loading…" />
+      </AppLayout>
+    )
   }
 
-  function handleCancel() {
-    setItem(EMPTY_ITEM)
+  if (collection.error) {
+    return (
+      <AppLayout>
+        {api.isNotFound(collection.error) ? (
+          <ResourceNotFound
+            title="Collection not found"
+            message="You cannot add an item to a collection that does not exist."
+            backTo="/collections"
+            backLabel="Back to Collections"
+          />
+        ) : (
+          <StatusMessage
+            variant="error"
+            title="Could not load the collection"
+            action={<Button onClick={collection.reload}>Try again</Button>}
+          >
+            {collection.error.message}
+          </StatusMessage>
+        )}
+      </AppLayout>
+    )
+  }
+
+  const { id, name } = collection.data
+  const collectionPath = `/collections/${id}`
+
+  async function handleSubmit(payload) {
+    const created = await api.createItem(id, payload)
+    navigate(collectionPath, { state: { notice: `Added "${created.name}" to ${name}.` } })
   }
 
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <AppLayout>
+      <Link to={collectionPath} className="back-link">
+        <span aria-hidden="true">←</span> Back to {name}
+      </Link>
 
-      <div className="main-area">
-        <Navbar />
+      <header className="page-header">
+        <div>
+          <h1>Add New Item</h1>
+          <p className="muted">
+            Adding to <strong>{name}</strong>.
+          </p>
+        </div>
+      </header>
 
-        <main className="page-content">
-          <header className="page-header">
-            <div>
-              <p>← Back to Collection</p>
-              <h2>Add New Item</h2>
-              <p>Add an item to your collection.</p>
-            </div>
-          </header>
-
-          <ItemForm
-            item={item}
-            setItem={setItem}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            submitLabel="Save Item"
-          />
-        </main>
-      </div>
-    </div>
+      <ItemForm onSubmit={handleSubmit} onCancel={() => navigate(collectionPath)} submitLabel="Save Item" />
+    </AppLayout>
   )
 }
