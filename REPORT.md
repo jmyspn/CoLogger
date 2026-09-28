@@ -1,5 +1,39 @@
 # Weekly Increment Report
 
+## Week of: September 28 – October 4, 2026
+
+## What changed this week
+
+- Replaced the Week 1 prototype's hardcoded sample data with one real data flow: React pages → `client/src/api` → Express API → PostgreSQL.
+- Built the backend: a PostgreSQL schema with `users`, `sessions`, `collections` and `items` tables, and Express routes for authentication, collections, items and dashboard totals.
+- Replaced the localStorage demo login with real authentication: registration, login and logout, bcrypt-hashed passwords, session tokens, and protected routes.
+- Collections and items now have full CRUD:
+  - create, rename, delete and search collections;
+  - add, view, edit, favorite and delete items inside a collection.
+- Every page now loads the record named in the URL (`/collections/:id`, `/items/:id`). Invalid IDs show "Collection not found" or "Item not found" instead of falling back to MCHOSE Ace 68.
+- The dashboard totals and recent items are calculated from the database.
+- Item images are resized in the browser and saved with the item, so they survive a refresh.
+- Applied my design system (colours, Arial, 8px spacing) and made the layout responsive for phones.
+- Added server-side validation, API tests, and updated the README, screenshots and AI-USAGE.md.
+
+## Why
+
+The biggest Week 1 problem was that every page had its own copy of fake data. Clicking Edit on any item always opened MCHOSE Ace 68, and nothing I added was actually saved. Fixing that properly meant building the real backend and database first, then connecting every page to it, instead of patching one page at a time.
+
+## What broke or what I got stuck on
+
+Most of the code for this increment was generated with AI assistance (Claude), and I reviewed and tested it. My main problems were setting it up on my own computer:
+
+- My first attempt at `npm run db:reset` failed because I had not copied the new files into the project yet, so it was still running the old template.
+- PostgreSQL was not installed on my computer at all. `Get-Service postgresql*` showed nothing. I installed it and created the `cologger` database.
+- Chrome showed `ERR_CONNECTION_REFUSED` for localhost:5173. The Vite dev server was not running; the app needs two terminals running at the same time, one for the API and one for the client.
+
+## What is left
+
+- Deploy the API and database (e.g. Render and Neon) and switch the GitHub Pages build from demo mode to the real API.
+- Features I plan to build myself: collection cover images, a settings page, and a Favorites screen.
+- Record my own contributions in AI-USAGE.md as I build them.
+
 ## Week of: September 21–27, 2026
 
 ## What changed this week
