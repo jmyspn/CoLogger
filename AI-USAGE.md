@@ -48,7 +48,7 @@ This project was built with AI assistance. This file records how AI was used dur
   - **Docs:** new screenshots and this README.
   - **Testing:** the AI tested the database queries against a real PostgreSQL 16 server and ran a browser test of the whole checklist at desktop and phone widths. Its workspace could not download npm packages, so during its testing the Express, pg, bcryptjs and React Router libraries were replaced by small test-only stand-ins. Those stand-ins are not part of the repository.
 - **What I kept, what I changed, and why:** I reviewed the generated code before committing it. I installed PostgreSQL on my Windows machine, created the cologger database, configured the .env files, and ran the app locally, which was the first time it ran with the real Express, pg and bcrypt libraries. I tested the flows myself: logging in, creating a collection, adding, editing, favoriting and deleting an item, and checking that data stays after a refresh. I kept the generated code as-is for this commit. I did not write the code in these files; my work was specifying the requirements, reviewing, setting up and testing it.
-- **Commit:** *(add the link after committing)*
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
 ## 2. Where the AI Got It Wrong
 
@@ -78,21 +78,21 @@ This project was built with AI assistance. This file records how AI was used dur
 - **What it gave me:** A dashboard search that rendered the results component as soon as the search text changed.
 - **What was wrong with it:** For one render, before the new request started, the results were still `null`, so the page crashed with "Cannot destructure property 'items' of 'results.data'".
 - **What was done instead:** The results component now shows the loading state until data for the new search exists. The browser test "dashboard search finds real item" covers this.
-- **Commit:** *(add the link after committing)*
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
 ### Case 5 - Hidden file input caused horizontal scrolling (found and fixed during testing)
 
 - **What it gave me:** A visually hidden `<input type="file">` behind a styled "Choose image" label.
 - **What was wrong with it:** The input was still wider than the screen, so the Add Item and Edit Item pages scrolled sideways at every width.
 - **What was done instead:** The hidden input is now clipped properly inside a positioned container. The horizontal-scroll check passes at 375, 390, 412, 768, 1024 and 1440 px.
-- **Commit:** *(add the link after committing)*
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
 ### Case 6 - Favorite button lost keyboard focus (found and fixed during testing)
 
 - **What it gave me:** A favorite button that was `disabled` while the change was being saved.
 - **What was wrong with it:** Disabling a focused button moves keyboard focus back to the page, so a keyboard user could not press Enter twice.
 - **What was done instead:** The button stays enabled and extra presses are ignored while saving.
-- **Commit:** *(add the link after committing)*
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
 ## 3. Who Wrote What
 
