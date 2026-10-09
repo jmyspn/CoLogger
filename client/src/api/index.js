@@ -40,6 +40,7 @@ export const {
   updateItem,
   setItemFavorite,
   deleteItem,
-  searchItems,
   getDashboard,
+  searchItems,
+  listFavorites,
 } = implementation

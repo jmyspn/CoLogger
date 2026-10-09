@@ -10,6 +10,16 @@ const NOT_FOUND = { error: 'Item not found.' }
 export function itemsRouter(pool) {
   const router = Router()
 
+    // GET /api/items/favorites
+  // Declared before '/:id' so Express does not read "favorites" as an id.
+  router.get('/favorites', async (request, response, next) => {
+    try {
+      response.json(await items.listFavorites(pool, request.user.id))
+    } catch (error) {
+      next(error)
+    }
+  })
+
   // GET /api/items?search=casio  searches the names of all your items.
   router.get('/', async (request, response, next) => {
     const text = typeof request.query.search === 'string' ? request.query.search.trim() : ''

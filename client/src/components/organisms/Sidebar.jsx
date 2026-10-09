@@ -23,6 +23,7 @@ export default function Sidebar() {
       <nav className="sidebar-nav" aria-label="Main">
         <NavLink to="/dashboard">Dashboard</NavLink>
         <NavLink to="/collections">Collections</NavLink>
+        <NavLink to="/favorites">Favorites</NavLink>
       </nav>
 
       <button type="button" className="logout-button" onClick={handleLogout}>

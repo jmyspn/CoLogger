@@ -428,6 +428,15 @@ export async function searchItems(text) {
     .map((item) => presentItem(db, item))
 }
 
+export async function listFavorites() {
+  await delay()
+  const db = await load()
+  return itemsOwnedBy(db, requireUser(db))
+    .filter((item) => item.isFavorite)
+    .sort(newestFirst)
+    .map((item) => presentItem(db, item))
+}
+
 // ---- Dashboard ------------------------------------------------------------
 
 export async function getDashboard() {

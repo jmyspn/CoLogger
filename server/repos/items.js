@@ -58,6 +58,11 @@ export async function search(pool, userId, text, limit = 50) {
   return result.rows.map(toItem)
 }
 
+export async function listFavorites(pool, userId) {
+  const result = await pool.query(`${SELECT_ITEM} AND i.is_favorite ${NEWEST_FIRST}`, [userId])
+  return result.rows.map(toItem)
+}
+
 export async function recent(pool, userId, limit = 6) {
   const result = await pool.query(`${SELECT_ITEM} ${NEWEST_FIRST} LIMIT $2`, [userId, limit])
   return result.rows.map(toItem)

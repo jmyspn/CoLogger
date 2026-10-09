@@ -133,6 +133,10 @@ export const deleteItem = (id) =>
 export const searchItems = (text) =>
   request(`/api/items?search=${encodeURIComponent(text)}`)
 
+export const listFavorites = () => request('/api/items/favorites')
+
 // ---- Dashboard ------------------------------------------------------------
+
+
 
 export const getDashboard = () => request('/api/dashboard')

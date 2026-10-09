@@ -469,14 +469,19 @@ img {
 .collection-card-image,
 .item-card-image {
   display: block;
+  position: relative;
   color: inherit;
   text-decoration: none;
   aspect-ratio: 4 / 3;
+  min-height: 0;
+  overflow: hidden;
   background: var(--color-subtle);
 }
 
 .collection-card-image img,
 .item-card-image img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
