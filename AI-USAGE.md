@@ -47,7 +47,7 @@ This project was built with AI assistance. This file records how AI was used dur
   - **Styling:** a new `styles.css` implementing the design system and the mobile layout.
   - **Docs:** new screenshots and this README.
   - **Testing:** the AI tested the database queries against a real PostgreSQL 16 server and ran a browser test of the whole checklist at desktop and phone widths. Its workspace could not download npm packages, so during its testing the Express, pg, bcryptjs and React Router libraries were replaced by small test-only stand-ins. Those stand-ins are not part of the repository.
-- **What I kept, what I changed, and why:** I reviewed the generated code before committing it. I installed PostgreSQL on my Windows machine, created the cologger database, configured the .env files, and ran the app locally, which was the first time it ran with the real Express, pg and bcrypt libraries. I tested the flows myself: logging in, creating a collection, adding, editing, favoriting and deleting an item, and checking that data stays after a refresh. I kept the generated code as-is for this commit. I did not write the code in these files; my work was specifying the requirements, reviewing, setting up and testing it.
+- **What I kept, what I changed, and why:** I kept the architecture. The single `client/src/api/` data layer, the `routes` / `repos` / `validation` split on the server, and loading every page from the id in the URL together fixed the main defect in my Week 1 build, where each page carried its own copy of the data and a details page could show the wrong item. I set up and ran the whole stack myself: PostgreSQL locally first, then Supabase for the deployed database, Render for the API and GitHub Pages for the client. I corrected the connection string when `?sslmode=require` turned out to conflict with the SSL options already set in `db/pool.js`, and traced a `getaddrinfo ENOTFOUND` on Render to a malformed environment variable. I have since added the Favorites feature myself and fixed a CSS defect in the collection cards (Case 7 above).
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
 ## 2. Where the AI Got It Wrong
@@ -94,6 +94,13 @@ This project was built with AI assistance. This file records how AI was used dur
 - **What was done instead:** The button stays enabled and extra presses are ignored while saving.
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
+### Case 7 - Collection cards did not line up (found by me, in the running app)
+
+- **What it gave me:** `.collection-card-image` in `client/src/styles.css` carried `aspect-ratio: 4 / 3`, with the `<img>` inside set to `width: 100%; height: 100%; object-fit: cover`.
+- **What was wrong with it:** The aspect ratio never took effect. That box is a flex item inside a column flex container, and flex items default to `min-height: auto`, so the box would not shrink below its content's natural height. The `height: 100%` on the image had no definite height to resolve against while the box was being sized, so it fell back to the photo's real pixel height. A portrait photo made one card's image far taller than its neighbour's, and the titles, item counts and "View Collection" buttons no longer lined up across a row.
+- **What I did instead:** I spotted it looking at my Keyboards and Sneakers collections side by side. The image is now `position: absolute; inset: 0` inside a `position: relative` box, so it contributes no height to its parent and `aspect-ratio` decides the shape. I also added `min-height: 0` to remove the flex floor and `overflow: hidden` to keep the crop inside the rounded corners.
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/6b4e5d4
+
 ## 3. Who Wrote What
 
 ### My current contribution
@@ -116,7 +123,18 @@ Week 2 rebuild (AI-generated, reviewed and tested by me). I used Claude to gener
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/9fe75eb
 - **What it does and why we kept it:** `ItemForm` provides the shared form used by the Add Item and Edit Item pages. It receives the current item state and a state setter through props, updates individual fields, and uses reusable components such as `Input`, `FormField`, `ImageUploader`, `FavoriteButton`, and `Button`. Reusing the same form prevents the Add and Edit pages from needing separate copies of nearly identical form code.
 
+- ### Code I wrote myself
+
+**Favorites screen (`/favorites`)**
+
+- **Files:** `server/repos/items.js` (`listFavorites`), `server/routes/items.js` (the `GET /favorites` route), `client/src/api/httpApi.js`, `client/src/api/mockApi.js`, `client/src/api/index.js`, `client/src/components/pages/FavoritesPage.jsx`, `client/src/App.jsx`, `client/src/components/organisms/Sidebar.jsx`
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/6b4e5d4
+- **How this differs from the rest:** I wrote this feature. Claude told me which files each layer lives in and which existing function to model each part on, and I wrote the code. I based the SQL on the existing `recent()` function, which gave me the `SELECT_ITEM` constant with its `c.user_id = $1` ownership check already built in, and added `AND i.is_favorite` to it.
+- **Decisions I made:** I used a named endpoint, `GET /api/items/favorites`, rather than adding a `?favorites=true` flag to the existing list route, because the path says what it returns. That meant declaring it above `GET /:id`, since Express matches routes in the order they are defined and would otherwise read "favorites" as an id. I also decided that un-hearting an item on this page leaves it on screen until the next load, rather than vanishing immediately, so an accidental click can be undone without hunting for the item again.
+- **Debugging I did:** The page first rendered white. The console said `Identifier 'searchItems' has already been declared`. I reasoned that a duplicate declaration could only come from the destructured export list, found a repeated `searchItems` in `client/src/api/index.js`, removed it, then found `getDashboard` duplicated as well — the parser only reports the first one it reaches. Later the feature worked locally but returned "Item not found" on the live site; that turned out to be Render still running the previous commit, which I fixed with a manual deploy.
+
 ### Week 2 rebuild: AI-generated code I still need to review
+
 
 The Week 2 rebuild (see the 2026-09-28 entry above) was generated by Claude, not written by me. Before claiming any part of it as my own work I will review it, run it, and record here which files I changed and what I understand about them. The files I plan to study first are:
 
