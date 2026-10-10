@@ -4,7 +4,9 @@ CoLogger (Collection Logger) is a full-stack web application for collectors who 
 
 **Stack:** React 18 + Vite + React Router (client) · Express 4 (API) · PostgreSQL (database) · bcrypt-hashed passwords with server-side sessions.
 
-> **Deployment status:** the client deploys to GitHub Pages through `.github/workflows/deploy-pages.yml`. The API and database are not deployed yet. Until they are, the Pages build runs in **demo mode** (see [Demo mode](#demo-mode)). Add the live links here once they exist.
+**Live app:** <https://jmyspn.github.io/CoLogger/> · **API:** <https://cologger-api.onrender.com>
+
+> The client runs on GitHub Pages, the API on Render (Singapore) and the database on Supabase. The free Render instance sleeps after about 15 minutes of inactivity, so the first request after a quiet spell can take up to a minute while it wakes. Everything after that responds normally.
 
 ## Contents
 
