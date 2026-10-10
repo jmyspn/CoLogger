@@ -123,7 +123,7 @@ Week 2 rebuild (AI-generated, reviewed and tested by me). I used Claude to gener
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/9fe75eb
 - **What it does and why we kept it:** `ItemForm` provides the shared form used by the Add Item and Edit Item pages. It receives the current item state and a state setter through props, updates individual fields, and uses reusable components such as `Input`, `FormField`, `ImageUploader`, `FavoriteButton`, and `Button`. Reusing the same form prevents the Add and Edit pages from needing separate copies of nearly identical form code.
 
-- ### Code I wrote myself
+### Code I wrote myself
 
 **Favorites screen (`/favorites`)**
 
