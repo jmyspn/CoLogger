@@ -30,6 +30,7 @@ CoLogger (Collection Logger) is a full-stack web application for collectors who 
 - Add, view, edit, favorite and delete items inside a collection, including an image.
 - The dashboard shows totals (collections, items, favorites) and recent items, all counted live from the database.
 - Works on desktop and phones (tested at 375, 390 and 412 px wide).
+- See every favorited item in one place on the Favorites screen.
 
 ## Requirements
 
@@ -151,6 +152,7 @@ If the client is built without `VITE_USE_MOCK_API=false`, it uses `client/src/ap
 | Login | `/login` | Log in. After logging in you return to the page you originally asked for. |
 | Register | `/register` | Create an account. You are logged in straight away. |
 | Dashboard | `/dashboard` | Live totals, the 6 most recent items, a search across collection and item names, and "+ New Collection". |
+| Favorites | `/favorites` | Every item you have hearted, newest first. Un-hearting leaves the item in place until the next load, so a mis-click is easy to undo. |
 | Collections | `/collections` | Search your collections and create a new one (dialog). Each card shows its computed item count. |
 | Collection Details | `/collections/:id` | Only that collection's items. Search within it, rename or delete the collection, add an item, favorite items. |
 | Add Item | `/collections/:id/items/new` | Shared `ItemForm`. The item is saved into the collection named in the URL. |
@@ -220,6 +222,7 @@ All endpoints except register and login require `Authorization: Bearer <token>`.
 | GET / POST | `/api/collections/:id/items` | List / add the items in one collection. |
 | GET | `/api/items?search=text` | Search item names. |
 | GET / PUT / DELETE | `/api/items/:id` | Read / update / delete an item. |
+| GET | `/api/items/favorites` | List every favorited item. |
 | PATCH | `/api/items/:id/favorite` | Set `{ isFavorite }`. |
 | GET | `/api/dashboard` | Totals and recent items. |
 | GET | `/healthz`, `/readyz` | Check the process is alive / the database is reachable. |
@@ -307,10 +310,8 @@ Mobile (375 px):
 
 ## Known issues and next steps
 
-- **Not deployed yet.** The API and database still need a host (for example Render + Neon). After that:
-  - set `CORS_ORIGINS` on the API to the Pages origin
-  - set the repository variables `VITE_USE_MOCK_API=false` and `VITE_API_BASE_URL`
-  - rebuild the client
+- **Free-tier cold start.** The Render instance sleeps after roughly 15 minutes idle. The first request then takes up to a minute while the container starts. This is a limit of the free plan, not a fault in the application.
+- **One database for development and production.** `server/.env` points at the same Supabase database the deployed site uses, so local testing writes to live data. Running `npm run db:seed` locally would empty it.
 - **Images in the database.** This is simple and survives redeploys on free hosts, but list responses include each item's image. It is fine for personal collections of dozens of items. Object storage (S3, Cloudinary) would be the next step for thousands.
 - **Demo mode storage** is limited to a few MB per browser, so only a handful of images fit.
 - **No password reset or email verification.**
