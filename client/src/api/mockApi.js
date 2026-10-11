@@ -175,12 +175,12 @@ function ownItem(db, user, id) {
 const newestFirst = (a, b) => b.createdAt.localeCompare(a.createdAt) || b.id - a.id
 
 function presentCollection(db, collection) {
-  const items = db.items.filter((item) => item.collectionId === collection.id).sort(newestFirst)
-  const { userId, ...fields } = collection
+  const items = db.items.filter((item) => item.collectionId === collection.id)
+  const { userId, image, ...fields } = collection
   return {
     ...fields,
     itemCount: items.length,
-    coverImage: items.find((item) => item.image)?.image || '',
+    coverImage: image || '',
   }
 }
 
@@ -192,7 +192,11 @@ function presentItem(db, item) {
 function cleanCollection(input) {
   const errors = validateCollection(input)
   if (hasErrors(errors)) throw invalid(errors)
-  return { name: input.name.trim(), description: (input.description || '').trim() }
+  return {
+    name: input.name.trim(),
+    description: (input.description || '').trim(),
+    image: input.image || '',
+  }
 }
 
 function assertUniqueName(db, user, name, exceptId = null) {

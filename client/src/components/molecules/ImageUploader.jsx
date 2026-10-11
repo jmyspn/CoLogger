@@ -8,7 +8,7 @@ import { ACCEPT_ATTRIBUTE, resizeImage } from '../../lib/image.js'
 // The file input stays in the page at all times so it can always be reached
 // with the keyboard.
 
-export default function ImageUploader({ id = 'item-image', image, itemName, onChange, error }) {
+export default function ImageUploader({ id = 'item-image', label = 'Item Image', image, itemName, onChange, error }) {
   const [processing, setProcessing] = useState(false)
   const [readError, setReadError] = useState('')
   const shownError = readError || error
@@ -33,7 +33,7 @@ export default function ImageUploader({ id = 'item-image', image, itemName, onCh
   return (
     <div className={`form-field image-uploader ${shownError ? 'has-error' : ''}`}>
       <span className="field-label" id={`${id}-label`}>
-        Item Image
+        {label}
       </span>
 
       <div className="image-uploader-body">

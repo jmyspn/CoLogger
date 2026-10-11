@@ -83,9 +83,17 @@ export function validateCollection(body) {
   const errors = {}
   const name = text(body.name)
   const description = text(body.description)
+  const image = typeof body.image === 'string' ? body.image : ''
   checkLength(errors, 'name', name, 'Collection name', 80, { required: true })
   checkLength(errors, 'description', description, 'Description', 500)
-  return { errors, value: { name, description } }
+
+  if (image && (image.length > MAX_IMAGE_LENGTH || !IMAGE_PATTERN.test(image))) {
+    errors.image = image.length > MAX_IMAGE_LENGTH
+      ? 'Image is too large. Choose a smaller image.'
+      : 'Image must be a JPEG, PNG, WebP or GIF.'
+  }
+
+  return { errors, value: { name, description, image } }
 }
 
 export function validateItem(body) {

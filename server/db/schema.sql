@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS collections (
 CREATE UNIQUE INDEX IF NOT EXISTS collections_user_name_idx
   ON collections (user_id, lower(name));
 
+ALTER TABLE collections ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS items (
   id              SERIAL PRIMARY KEY,
   collection_id   INTEGER       NOT NULL REFERENCES collections (id) ON DELETE CASCADE,

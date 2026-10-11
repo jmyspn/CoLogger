@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Input from '../atoms/Input.jsx'
 import Button from '../atoms/Button.jsx'
 import FormField from '../molecules/FormField.jsx'
+import ImageUploader from '../molecules/ImageUploader.jsx'
 import StatusMessage from '../molecules/StatusMessage.jsx'
 import { hasErrors, validateCollection } from '../../lib/validation.js'
 
@@ -24,6 +25,8 @@ export default function CollectionForm({
   const [values, setValues] = useState({
     name: initialValues?.name ?? '',
     description: initialValues?.description ?? '',
+    // The API returns the saved cover as coverImage, not image.
+    image: initialValues?.coverImage ?? '',
   })
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -44,19 +47,33 @@ export default function CollectionForm({
     }
   }
 
+  function updateImage(dataUrl) {
+    setValues((current) => ({ ...current, image: dataUrl }))
+    if (errors.image) setErrors(({ image: _removed, ...rest }) => rest)
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError('')
     const found = validateCollection(values)
     setErrors(found)
     if (hasErrors(found)) {
-      document.getElementById(found.name ? 'collection-name' : 'collection-description')?.focus()
+      const firstErrorId = found.name
+        ? 'collection-name'
+        : found.description
+          ? 'collection-description'
+          : 'collection-image'
+      document.getElementById(firstErrorId)?.focus()
       return
     }
 
     setSaving(true)
     try {
-      await onSubmit({ name: values.name.trim(), description: values.description.trim() })
+      await onSubmit({
+        name: values.name.trim(),
+        description: values.description.trim(),
+        image: values.image,
+      })
     } catch (error) {
       setErrors(error.fields || {})
       setFormError(error.fields && hasErrors(error.fields) ? '' : error.message)
@@ -93,16 +110,25 @@ export default function CollectionForm({
           required
         />
 
-        <FormField label="Description" htmlFor="collection-description" error={errors.description} hint="Optional.">
+        <FormField label="Description" htmlFor="collection-description" error={errors.description}>
           <textarea
             id="collection-description"
             rows={3}
             maxLength={500}
             value={values.description}
             onChange={update('description')}
-            aria-describedby={errors.description ? 'collection-description-error' : 'collection-description-hint'}
+            aria-describedby={errors.description ? 'collection-description-error' : undefined}
           />
         </FormField>
+
+        <ImageUploader
+          id="collection-image"
+          label="Cover Image"
+          image={values.image}
+          itemName={values.name}
+          onChange={updateImage}
+          error={errors.image}
+        />
 
         <div className="form-actions">
           <Button variant="secondary" onClick={onClose} disabled={saving}>
