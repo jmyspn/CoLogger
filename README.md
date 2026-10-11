@@ -1,6 +1,8 @@
 # CoLogger
 
-CoLogger (Collection Logger) is a full-stack web application for collectors who want to organize and track personal collections — mechanical keyboards, sneakers, trading cards, watches, games, figures and anything else. Each collection holds items with a name, image, estimated value, currency, purchase price, acquired date, where it was acquired, condition, notes and a favorite flag.
+[![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
+
+CoLogger (Collection Logger) is a full-stack web application for collectors who want to organize and track...
 
 **Stack:** React 18 + Vite + React Router (client) · Express 4 (API) · PostgreSQL (database) · bcrypt-hashed passwords with server-side sessions.
 
@@ -322,6 +324,4 @@ Mobile (375 px):
 
 ## AI usage
 
-[![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-1D4ED8)](./AI-USAGE.md)
-
-This project was built with AI assistance. **ChatGPT (OpenAI)** was used for the Week 1 frontend scaffolding and routing; **Claude (Anthropic)** was used for the Week 2 full-stack rebuild and for guidance on the Favorites screen and collection cover images. What was generated, what I kept or changed, what I wrote myself, and where the AI got it wrong is recorded in [AI-USAGE.md](./AI-USAGE.md).
+This project was built with heavy AI assistance. **ChatGPT (OpenAI)** produced the Week 1 frontend scaffolding and routing. **Claude (Anthropic)** produced most of the Week 2 full-stack rebuild — the Express API, the PostgreSQL schema, authentication, and the client data layer — which I then set up, ran and tested myself. The Favorites screen and collection cover images I wrote, with Claude pointing at files rather than writing code. Full detail, including the cases where the AI was wrong, is in [AI-USAGE.md](./AI-USAGE.md).
