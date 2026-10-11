@@ -130,7 +130,7 @@ This project was built with AI assistance. This file records how AI was used dur
 
 During development, I reviewed and integrated AI-assisted code rather than accepting it blindly. I tested the implementation, checked whether it matched my project requirements, corrected problems, and made decisions about what code to keep or change.
 
-As the project continues, this section will list specific features and files where I personally wrote or substantially modified the implementation.
+
 
 Week 2 rebuild (AI-generated, reviewed and tested by me). I used Claude to generate the code in the 2026-09-28 commit. My part was deciding what the app needed to do and how it should look, since the requirements, wireframes and design system came from my own planning. I also pointed out the problems I ran into in Week 1, like every page having its own sample data and Edit always opening MCHOSE Ace 68. After the code was generated, I installed PostgreSQL on my computer, set up the database and .env files, and ran the app locally. I went through the main flows myself (logging in, creating collections, adding, editing, favoriting and deleting items, and refreshing to make sure everything stayed saved), and I reviewed the changes before committing them.
 
@@ -156,22 +156,20 @@ Week 2 rebuild (AI-generated, reviewed and tested by me). I used Claude to gener
 - **Decisions I made:** I used a named endpoint, `GET /api/items/favorites`, rather than adding a `?favorites=true` flag to the existing list route, because the path says what it returns. That meant declaring it above `GET /:id`, since Express matches routes in the order they are defined and would otherwise read "favorites" as an id. I also decided that un-hearting an item on this page leaves it on screen until the next load, rather than vanishing immediately, so an accidental click can be undone without hunting for the item again.
 - **Debugging I did:** The page first rendered white. The console said `Identifier 'searchItems' has already been declared`. I reasoned that a duplicate declaration could only come from the destructured export list, found a repeated `searchItems` in `client/src/api/index.js`, removed it, then found `getDashboard` duplicated as well — the parser only reports the first one it reaches. Later the feature worked locally but returned "Item not found" on the live site; that turned out to be Render still running the previous commit, which I fixed with a manual deploy.
 
-- **Collection cover images**
+**Collection cover images**
 
 - **Files:** `server/db/schema.sql`, `server/repos/collections.js`, `server/validation.js`, `client/src/api/mockApi.js`, `client/src/components/organisms/CollectionForm.jsx`, `client/src/components/molecules/ImageUploader.jsx`
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/3dc9bb3
 - **How I worked on this one:** I wrote each layer myself first, then compared it against Claude's version before deciding what to keep. Several parts matched. Where they differed I took whichever read better, and in a few places that was Claude's. This is less entirely my own work than the Favorites screen, and I am recording that rather than overstating it.
-- **Decisions I made:** A collection with no cover now shows a letter placeholder instead of borrowing a photo from one of its items, which is what the previous SQL did with a subquery. I chose that because a cover should be something the owner picked, not something that changes silently when an item is added or deleted. I added the new column with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` as well as editing the `CREATE TABLE` section, because my Supabase database already existed and `CREATE TABLE IF NOT EXISTS` does nothing to a table that is already there. I also removed the "Optional." hint under the Description field, since the required marker on Collection Name already shows which fields are needed.
+- **Decisions I made:** A collection with no cover now shows a letter placeholder instead of borrowing a photo from one of its items, which is what the previous SQL did with a subquery. I chose that because a cover should be something the owner picked, not something that changes silently when an item is added or deleted. I added the new column with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` rather than putting it in the `CREATE TABLE` block, because my Supabase database already existed and `CREATE TABLE IF NOT EXISTS` does nothing to a table that is already there. The ALTER runs straight after the table, so a fresh clone gets the column too. I also removed the "Optional." hint under the Description field, since the required marker on Collection Name already shows which fields are needed.
 - **What I had to understand:** that `toCollection` exposes the saved value as `coverImage` rather than `image`, so the edit dialog must read `initialValues?.coverImage` — reading `image` would open it blank and wipe the cover on save; and that `ImageUploader` had its label hardcoded to "Item Image", so it needed a `label` prop before it could be reused outside items.
 
-### Week 2 rebuild: AI-generated code I still need to review
+### Week 2 rebuild: AI-generated code, and how far I have got through it
 
+The Week 2 rebuild (see the 2026-09-28 entry above) was generated by Claude, not written by me. I have since worked inside parts of it: I added `listFavorites` to `server/repos/items.js` and a route to `server/routes/items.js`, edited `client/src/api/index.js`, `httpApi.js` and `mockApi.js` for both of my features, and changed `server/repos/collections.js`, `server/validation.js`, `CollectionForm.jsx` and `ImageUploader.jsx` for collection covers. Those I can explain. The parts I have run and tested but not read closely, and so do not claim as my own, are:
 
-The Week 2 rebuild (see the 2026-09-28 entry above) was generated by Claude, not written by me. Before claiming any part of it as my own work I will review it, run it, and record here which files I changed and what I understand about them. The files I plan to study first are:
-
-- `client/src/api/index.js` and `client/src/api/httpApi.js`: how every page gets its data through one layer
+- `client/src/auth/AuthContext.jsx` and the route guards: how "who is logged in" is held in one place
 - `client/src/components/pages/ItemDetailsPage.jsx` and `EditItemPage.jsx`: how the `:id` in the URL decides which item loads
-- `server/repos/items.js`: the SQL, and how the `c.user_id = $1` ownership check works
 - `server/routes/auth.js` and `server/repos/sessions.js`: bcrypt hashing and session tokens
 
 ## Week 1 Note
@@ -181,3 +179,7 @@ This file will continue to be updated as the project develops. More AI-use entri
 ## Week 2 Note
 
 With the core features now working (collections, items, login and the database), I can focus on the smaller features that complete my vision for the app. I plan to build some of these myself, such as collection cover functions, settings features, favorite tab / screen, and I'll record which parts are my own work here as I go.
+
+## Week 3 Note
+
+Week 3 was about getting the project off my laptop and finishing it. I deployed the database to Supabase, the API to Render and the client to GitHub Pages, and worked through the connection-string and environment-variable problems that came up on the way. I then built two features myself: the Favorites screen and collection cover images, both recorded under "Code I wrote myself" above. Claude's part in those was telling me which file each layer belonged in and reviewing what I wrote; the code is mine. I also found a CSS defect in the collection cards by looking at the running app (Case 7), and caught Claude being wrong about image validation (Case 8). The settings page I mentioned in my Week 2 note is not built — I ran out of time, and I would rather say that than pretend otherwise.
