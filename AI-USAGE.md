@@ -50,6 +50,22 @@ This project was built with AI assistance. This file records how AI was used dur
 - **What I kept, what I changed, and why:** I kept the architecture. The single `client/src/api/` data layer, the `routes` / `repos` / `validation` split on the server, and loading every page from the id in the URL together fixed the main defect in my Week 1 build, where each page carried its own copy of the data and a details page could show the wrong item. I set up and ran the whole stack myself: PostgreSQL locally first, then Supabase for the deployed database, Render for the API and GitHub Pages for the client. I corrected the connection string when `?sslmode=require` turned out to conflict with the SSL options already set in `db/pool.js`, and traced a `getaddrinfo ENOTFOUND` on Render to a malformed environment variable. I have since added the Favorites feature myself and fixed a CSS defect in the collection cards (Case 7 above).
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/232dc07
 
+### 2026-10-09 - Deployment, and guidance for building the Favorites screen myself
+
+- **Tool:** Claude (Anthropic), model configured as `claude-opus-5`.
+- **What I asked for:** Two things. First, help getting the app off my laptop: a hosted database, a hosted API, and the GitHub Pages build pointed at them. Second, for the Favorites screen, I asked it to tell me where each layer belongs and what to model it on, rather than writing the feature for me.
+- **What it gave back:** A deployment plan using Supabase for the database, Render for the API, and two repository variables (`VITE_USE_MOCK_API`, `VITE_API_BASE_URL`) for the Pages build. For Favorites, it listed the eight files involved and pointed me at the existing `recent()` function as the model for my SQL, but did not write the code.
+- **What I kept, what I changed, and why:** I followed the deployment plan and fixed three things it did not anticipate: `?sslmode=require` in the connection string conflicted with the SSL options already in `db/pool.js`, Render's `DATABASE_URL` had been pasted malformed and failed with `getaddrinfo ENOTFOUND base`, and Render's auto-deploy never fired so the API kept running an older commit while the client was up to date. The Favorites feature itself I wrote (see "Code I wrote myself" below).
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/6b4e5d4
+
+### 2026-10-11 - Collection cover images
+
+- **Tool:** Claude (Anthropic), model configured as `claude-opus-5`.
+- **What I asked for:** Guidance for giving collections a cover image of their own, instead of the card borrowing a photo from the newest item in the collection.
+- **What it gave back:** The layers to change and the order to do them in — database column first, then the repository queries, then validation, then demo mode, then the form — plus a review of the code I wrote at each step.
+- **What I kept, what I changed, and why:** I wrote each layer myself first and then compared it with Claude's version, keeping whichever read better; in a few places that was Claude's. I decided a collection with no cover should show a letter placeholder rather than borrowing an item photo, because a cover should be something the owner picked. I also caught that Claude was wrong about image validation (Case 8 below) and added the missing check.
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/3dc9bb3
+
 ## 2. Where the AI Got It Wrong
 
 ### Case 1 - Incorrect screenshot path
