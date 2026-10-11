@@ -26,7 +26,7 @@ CoLogger (Collection Logger) is a full-stack web application for collectors who 
 ## Overview
 
 - Register and log in; every collection and item belongs to the logged-in user.
-- Create, search, rename and delete collections.
+- Create, search, rename and delete collections, each with its own cover image.
 - Add, view, edit, favorite and delete items inside a collection, including an image.
 - The dashboard shows totals (collections, items, favorites) and recent items, all counted live from the database.
 - Works on desktop and phones (tested at 375, 390 and 412 px wide).
@@ -126,7 +126,7 @@ users ──< collections ──< items
 | --- | --- |
 | `users` | `id`, `name`, `email` (unique, case-insensitive), `password_hash` |
 | `sessions` | `user_id`, `token_hash` (SHA-256 of the login token), `expires_at` |
-| `collections` | `id`, `user_id`, `name` (unique per user, case-insensitive), `description` |
+| `collections` | `id`, `user_id`, `name` (unique per user, case-insensitive), `description`, `image` |
 | `items` | `id`, `collection_id`, `name`, `image`, `estimated_value`, `currency`, `purchase_price`, `acquired_date`, `acquired_from`, `condition`, `notes`, `is_favorite` |
 
 Foreign keys use `ON DELETE CASCADE`: deleting a collection deletes its items. Item counts and dashboard totals are not stored anywhere; they are counted with SQL on every request, so they can't drift out of date.
@@ -153,8 +153,8 @@ If the client is built without `VITE_USE_MOCK_API=false`, it uses `client/src/ap
 | Register | `/register` | Create an account. You are logged in straight away. |
 | Dashboard | `/dashboard` | Live totals, the 6 most recent items, a search across collection and item names, and "+ New Collection". |
 | Favorites | `/favorites` | Every item you have hearted, newest first. Un-hearting leaves the item in place until the next load, so a mis-click is easy to undo. |
-| Collections | `/collections` | Search your collections and create a new one (dialog). Each card shows its computed item count. |
-| Collection Details | `/collections/:id` | Only that collection's items. Search within it, rename or delete the collection, add an item, favorite items. |
+| Collections | `/collections` | Search your collections and create a new one (dialog), with an optional cover image. Each card shows its computed item count. |
+| Collection Details | `/collections/:id` | Only that collection's items. Search within it, rename the collection or change its cover, delete it, add an item, favorite items. |
 | Add Item | `/collections/:id/items/new` | Shared `ItemForm`. The item is saved into the collection named in the URL. |
 | Item Details | `/items/:id` | All fields, favorite toggle, Edit, Delete, and "Back to *its* collection". |
 | Edit Item | `/items/:id/edit` | The same `ItemForm`, filled with that item's saved values. |
@@ -181,6 +181,7 @@ Every app route requires a login. If you're not logged in you are sent to `/logi
 **Images.**
 - When you pick a photo, the browser resizes it to at most 800 px and converts it to a JPEG *data URL*, typically 50–200 KB.
 - The API stores that text in the `items.image` column. Images are saved in PostgreSQL alongside the item, so they survive refreshes and redeploys, and deleting the item deletes its image.
+- Collections have a cover image of their own, stored the same way in `collections.image`. A collection with no cover shows a letter placeholder; it does not borrow a photo from one of its items.
 - Accepted formats are JPEG, PNG, WebP and GIF. GIFs become a still JPEG.
 - In demo mode the image is stored in the browser's `localStorage`, which holds only a few MB.
 
