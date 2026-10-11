@@ -101,6 +101,13 @@ This project was built with AI assistance. This file records how AI was used dur
 - **What I did instead:** I spotted it looking at my Keyboards and Sneakers collections side by side. The image is now `position: absolute; inset: 0` inside a `position: relative` box, so it contributes no height to its parent and `aspect-ratio` decides the shape. I also added `min-height: 0` to remove the flex floor and `overflow: hidden` to keep the crop inside the rounded corners.
 - **Commit:** https://github.com/jmyspn/CoLogger/commit/6b4e5d4
 
+### Case 8 - AI said item images were not validated, when they were
+
+- **What it gave me:** While I was adding cover images to collections, Claude told me that `validateItem` in `server/validation.js` does not check image size or format, and that leaving the same check out of `validateCollection` would keep the two consistent.
+- **What was wrong with it:** It had only read the first part of the function. `validateItem` does check images, against `IMAGE_PATTERN` and `MAX_IMAGE_LENGTH`, both defined at the top of that same file. Following the advice would have left collection images unchecked, so anyone posting straight to the API could have stored arbitrary text, or a very large string, in the new column. The file's own header says these server-side checks are the ones that actually protect the database, so the gap would have mattered.
+- **What I did instead:** The mistake came to light when I pasted the whole file for review and the existing check was spotted a few lines further down. I applied the same rule to `validateCollection`, reusing both constants.
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/3dc9bb3
+
 ## 3. Who Wrote What
 
 ### My current contribution
@@ -132,6 +139,14 @@ Week 2 rebuild (AI-generated, reviewed and tested by me). I used Claude to gener
 - **How this differs from the rest:** I wrote this feature. Claude told me which files each layer lives in and which existing function to model each part on, and I wrote the code. I based the SQL on the existing `recent()` function, which gave me the `SELECT_ITEM` constant with its `c.user_id = $1` ownership check already built in, and added `AND i.is_favorite` to it.
 - **Decisions I made:** I used a named endpoint, `GET /api/items/favorites`, rather than adding a `?favorites=true` flag to the existing list route, because the path says what it returns. That meant declaring it above `GET /:id`, since Express matches routes in the order they are defined and would otherwise read "favorites" as an id. I also decided that un-hearting an item on this page leaves it on screen until the next load, rather than vanishing immediately, so an accidental click can be undone without hunting for the item again.
 - **Debugging I did:** The page first rendered white. The console said `Identifier 'searchItems' has already been declared`. I reasoned that a duplicate declaration could only come from the destructured export list, found a repeated `searchItems` in `client/src/api/index.js`, removed it, then found `getDashboard` duplicated as well — the parser only reports the first one it reaches. Later the feature worked locally but returned "Item not found" on the live site; that turned out to be Render still running the previous commit, which I fixed with a manual deploy.
+
+- **Collection cover images**
+
+- **Files:** `server/db/schema.sql`, `server/repos/collections.js`, `server/validation.js`, `client/src/api/mockApi.js`, `client/src/components/organisms/CollectionForm.jsx`, `client/src/components/molecules/ImageUploader.jsx`
+- **Commit:** https://github.com/jmyspn/CoLogger/commit/3dc9bb3
+- **How I worked on this one:** I wrote each layer myself first, then compared it against Claude's version before deciding what to keep. Several parts matched. Where they differed I took whichever read better, and in a few places that was Claude's. This is less entirely my own work than the Favorites screen, and I am recording that rather than overstating it.
+- **Decisions I made:** A collection with no cover now shows a letter placeholder instead of borrowing a photo from one of its items, which is what the previous SQL did with a subquery. I chose that because a cover should be something the owner picked, not something that changes silently when an item is added or deleted. I added the new column with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` as well as editing the `CREATE TABLE` section, because my Supabase database already existed and `CREATE TABLE IF NOT EXISTS` does nothing to a table that is already there. I also removed the "Optional." hint under the Description field, since the required marker on Collection Name already shows which fields are needed.
+- **What I had to understand:** that `toCollection` exposes the saved value as `coverImage` rather than `image`, so the edit dialog must read `initialValues?.coverImage` — reading `image` would open it blank and wipe the cover on save; and that `ImageUploader` had its label hardcoded to "Item Image", so it needed a `label` prop before it could be reused outside items.
 
 ### Week 2 rebuild: AI-generated code I still need to review
 
