@@ -2,7 +2,7 @@
 
 [![Made with AI](https://img.shields.io/badge/Made_with-AI_assistance-blue)](AI-USAGE.md)
 
-CoLogger (Collection Logger) is a full-stack web application for collectors who want to organize and track...
+CoLogger (Collection Logger) is a full-stack web application for collectors who want to organize and track personal collections like mechanical keyboards, sneakers, trading cards, watches, games, figures and anything else. Each collection holds items with a name, image, estimated value, currency, purchase price, acquired date, where it was acquired, condition, notes and a favorite flag.
 
 **Stack:** React 18 + Vite + React Router (client) · Express 4 (API) · PostgreSQL (database) · bcrypt-hashed passwords with server-side sessions.
 
