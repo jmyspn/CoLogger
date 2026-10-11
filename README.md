@@ -322,4 +322,6 @@ Mobile (375 px):
 
 ## AI usage
 
-AI tools were used during development. What was generated, what was reviewed and what was changed is recorded in [AI-USAGE.md](./AI-USAGE.md).
+[![Built with AI assistance](https://img.shields.io/badge/Built%20with-AI%20assistance-1D4ED8)](./AI-USAGE.md)
+
+This project was built with AI assistance. **ChatGPT (OpenAI)** was used for the Week 1 frontend scaffolding and routing; **Claude (Anthropic)** was used for the Week 2 full-stack rebuild and for guidance on the Favorites screen and collection cover images. What was generated, what I kept or changed, what I wrote myself, and where the AI got it wrong is recorded in [AI-USAGE.md](./AI-USAGE.md).
